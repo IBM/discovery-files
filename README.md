@@ -5,7 +5,6 @@ An extremely simple tool to send files into Watson Discovery, with automatic err
 
 - [Becca Makar](https://github.ibm.com/Rebecca-Makar)
 - [Bruce Adams](https://github.ibm.com/ba)
-- [Lera Brusilovsky](https://github.ibm.com/vbrusilo)
 - [Phil Anderson](https://github.ibm.com/Phil-Anderson)
 
 
