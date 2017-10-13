@@ -9,6 +9,20 @@ An extremely simple tool to send files into Watson Discovery, with automatic err
 - [Bruce Adams](https://github.ibm.com/ba)
 - [Phil Anderson](https://github.ibm.com/Phil-Anderson)
 
+
+## Requirements
+
+This tool runs on a recent release of Python 3. We tested on Python 3.6.
+With [Homebrew](https://brew.sh) on macOS, this will install Python 3.6:
+```
+brew install python3
+```
+
+One external library is needed: the Watson Developer Cloud SDK for Python.
+```
+pip3 install watson-developer-cloud
+```
+
 ## Command line
 
 ```

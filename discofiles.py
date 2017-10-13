@@ -4,7 +4,6 @@ import argparse
 import json
 import os
 import queue
-import requests
 import sys
 import threading
 import time
@@ -140,7 +139,7 @@ def main(args):
     count_ignore = 0
     count_ingest = 0
     for path in args.paths:
-        for root, dirs, files in os.walk(path):
+        for root, _dirs, files in os.walk(path):
             for name in files:
 
                 this_path = os.path.join(root, name)
