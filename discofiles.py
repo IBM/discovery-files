@@ -5,6 +5,7 @@ import json
 import os
 import queue
 import requests
+import sys
 import threading
 import time
 
@@ -60,7 +61,15 @@ class Worker:
                                                 self.collection_id,
                                                 f)
             except:
-                print("giving up")
+                exception = sys.exc_info()[1]
+                exception_code_string = exception.args[0]
+                parsed_string = exception_code_string[-3:]
+
+                if parsed_string == "429":
+                    self.queue.put(item)
+
+                else:
+                    print("Failing because it is", exception_code_string)
 
             self.queue.task_done()
             item = self.queue.get()
