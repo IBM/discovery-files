@@ -40,17 +40,14 @@ def writable_environment_id(discovery):
             return environment["environment_id"]
 
 
-def set_of_indexed_filenames(creds):
-    discovery = DiscoveryV1(creds.get("version", "2017-08-01"),
-                            url=creds["url"],
-                            username=creds["username"],
-                            password=creds["password"])
-
-    results = discovery.query(creds["environment_id"],
-                              creds["collection_id"],
-                              {"return": "extracted_metadata.filename"})
-
-    return {result["extracted_metadata"]["filename"].split("-")[1]
+def set_of_indexed_filenames(discovery,
+                             environment_id,
+                             collection_id):
+    results = discovery.query(environment_id,
+                              collection_id,
+                              {"count": 10000,
+                               "return": "extracted_metadata.filename"})
+    return {result["extracted_metadata"]["filename"]
             for result in results["results"]}
 
 
@@ -73,10 +70,11 @@ def main(args):
         exit(1)
 
     print(args)
-    try:
-        indexed = set_of_indexed_filenames(args)
-    except:
-        indexed = set()
+    indexed = set_of_indexed_filenames(discovery,
+                                       args.environment_id,
+                                       args.collection_id)
+    print(len(indexed))
+
     for path in args.paths:
         for root, dirs, files in os.walk(path):
             for name in files:
