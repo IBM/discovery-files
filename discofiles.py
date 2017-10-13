@@ -85,9 +85,10 @@ def main(args):
                     print("Ignoring this", name, "because it is already there")
                 else:
                     print("Ingesting", name)
-                    discovery.add_document(args.environment_id,
-                                           args.collection_id,
-                                           this_path)
+                    with open(this_path, "rb") as f:
+                        discovery.add_document(args.environment_id,
+                                               args.collection_id,
+                                               f)
 
 
 def parse_command_line():
