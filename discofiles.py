@@ -49,6 +49,13 @@ def main(args):
         args.environment_id)["collections"]
     if len(collections) == 1:
         args.collection_id = collections[0]["collection_id"]
+    if not args.collection_id:
+        if collections:
+            print("Error: multiple collections found. Please specify which one to use.")
+        else:
+            print("Error: no target collection found. Please create a collection.")
+        exit(1)
+
     print(args)
 
 
