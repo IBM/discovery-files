@@ -3,6 +3,11 @@
 import argparse
 import json
 import os
+import queue
+import requests
+import threading
+import time
+
 
 from watson_developer_cloud import DiscoveryV1
 
@@ -32,6 +37,43 @@ paths          {}""".format(self.url,
                             self.environment_id,
                             self.collection_id,
                             self.paths)
+
+
+class Worker:
+    def __init__(self, discovery, environment_id, collection_id):
+        self.discovery = discovery
+        self.environment_id = environment_id
+        self.collection_id = collection_id
+        self.queue = queue.Queue()
+        for _ in range(16):
+            threading.Thread(target=self.worker, daemon=True).start()
+
+    def worker(self):
+        item = self.queue.get()
+        while item:
+            if item is None:
+                break
+
+            try:
+                with open(item, "rb") as f:
+                    self.discovery.add_document(self.environment_id,
+                                                self.collection_id,
+                                                f)
+            except:
+                print("giving up")
+
+            self.queue.task_done()
+            item = self.queue.get()
+
+    def put_in_queue(self, item):
+        """Push an item into our work queue."""
+        self.queue.put(item)
+
+    def finish(self):
+        """Block until all tasks are done then return runtime."""
+        self.queue.join()
+        for _ in range(16):
+            self.queue.put(None)
 
 
 def writable_environment_id(discovery):
@@ -70,6 +112,9 @@ def main(args):
         exit(1)
 
     print(args)
+
+    work = Worker(discovery, args.environment_id, args.collection_id)
+
     indexed = set_of_indexed_filenames(discovery,
                                        args.environment_id,
                                        args.collection_id)
@@ -80,15 +125,13 @@ def main(args):
             for name in files:
 
                 this_path = os.path.join(root, name)
-                print(this_path)
                 if name in indexed:
                     print("Ignoring this", name, "because it is already there")
                 else:
                     print("Ingesting", name)
-                    with open(this_path, "rb") as f:
-                        discovery.add_document(args.environment_id,
-                                               args.collection_id,
-                                               f)
+                    work.put_in_queue(this_path)
+
+    work.finish()
 
 
 def parse_command_line():
