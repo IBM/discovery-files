@@ -3,12 +3,6 @@
 import argparse
 import json
 import os
-import glob
-import queue
-import time
-from base64 import urlsafe_b64encode
-from hashlib import sha384
-
 
 from watson_developer_cloud import DiscoveryV1
 
@@ -22,9 +16,6 @@ class Args:
         self.environment_id = creds.get("environment_id")
         self.collection_id = creds.get("collection_id")
         self.paths = []
-        self.queue = queue.Queue()
-        self.start_time = time.perf_counter()
-        self.wait_until = self.start_time
 
     def __str__(self):
         """Formatted string of our variables"""
@@ -41,19 +32,6 @@ paths          {}""".format(self.url,
                             self.environment_id,
                             self.collection_id,
                             self.paths)
-
-    def push_work(self, item):
-        """Push an item into our work queue."""
-        self.queue.put(item)
-
-    def finish(self):
-        """Block until all tasks are done then return runtime."""
-        self.queue.join()
-        time_pushing = time.perf_counter() - self.start_time
-        # Tell my worker threads to finish
-        for _ in range(self.thread_count):
-            self.queue.put(None)
-        return time_pushing
 
 
 def writable_environment_id(discovery):
@@ -95,37 +73,23 @@ def main(args):
         exit(1)
 
     print(args)
-
-    path = args["Path_directory"]
-    work = Args(args)
-
     try:
         indexed = set_of_indexed_filenames(args)
     except:
         indexed = set()
+    for path in args.paths:
+        for root, dirs, files in os.walk(path):
+            for name in files:
 
-    for infile in glob.glob(os.path.join(path, '*.fasta')):
-
-        if indexed:
-            print("Ingesting", infile,
-                  "skipping", len(indexed), "items found in the index")
-        else:
-            print("Ingesting", infile)
-
-        print("current file is: " + infile)
-
-        in_count = 0
-        push_count = 0
-        if infile["file_name"] not in indexed:
-            work.push_work((infile["file_name"],
-                            hash_url(infile["url"]),
-                            json.dumps(infile)))
-            push_count += 1
-        in_count += 1
-
-    time_pushing = work.finish()
-    print("Completed pushing", push_count, "documents in",
-          time_pushing, "seconds")
+                this_path = os.path.join(root, name)
+                print(this_path)
+                if name in indexed:
+                    print("Ignoring this", name, "because it is already there")
+                else:
+                    print("Ingesting", name)
+                    discovery.add_document(args.environment_id,
+                                           args.collection_id,
+                                           this_path)
 
 
 def parse_command_line():
@@ -142,14 +106,6 @@ def parse_command_line():
         args = Args(json.load(creds_file))
     args.paths = parsed.path
     return args
-
-
-@staticmethod
-def hash_url(url):
-    """Mash a URL into a form that can be used as a document_id
-       in Watson Discovery."""
-    return urlsafe_b64encode(sha384(bytes(url, "UTF-8")).digest()) \
-        .decode("UTF-8")
 
 
 if __name__ == "__main__":
