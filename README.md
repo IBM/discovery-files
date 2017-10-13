@@ -23,5 +23,6 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -credentials CREDENTIALS
-                        JSON file containing Discovery service credentials
+                        JSON file containing Discovery service credentials;
+                        default: "credentials.json"
 ```

@@ -60,7 +60,7 @@ def parse_command_line():
                         help="File or directory of files to send to Discovery")
     parser.add_argument("-credentials",
                         default="credentials.json",
-                        help="JSON file containing Discovery service credentials")
+                        help='JSON file containing Discovery service credentials; default: "credentials.json"')
     parsed = parser.parse_args()
     with open(parsed.credentials) as creds_file:
         args = Args(json.load(creds_file))
