@@ -166,13 +166,18 @@ def parse_command_line():
     parser.add_argument("path",
                         nargs="+",
                         help="File or directory of files to send to Discovery")
-    parser.add_argument("-credentials",
+    parser.add_argument("-json",
                         default="credentials.json",
                         help='JSON file containing Discovery service credentials; default: "credentials.json"')
+    parser.add_argument("-collection_id",
+                        help="Discovery collection_id; defaults to an existing collection, when there is only one.")
+
     parsed = parser.parse_args()
-    with open(parsed.credentials) as creds_file:
+    with open(parsed.json) as creds_file:
         args = Args(json.load(creds_file))
     args.paths = parsed.path
+    if parsed.collection_id:
+        args.collection_id = parsed.collection_id
     return args
 
 

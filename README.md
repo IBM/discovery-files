@@ -27,7 +27,8 @@ pip3 install watson-developer-cloud
 
 ```
 ./discofiles.py -h
-usage: discofiles.py [-h] [-credentials CREDENTIALS] path [path ...]
+usage: discofiles.py [-h] [-json JSON] [-collection_id COLLECTION_ID]
+                     path [path ...]
 
 Send files into Watson Discovery
 
@@ -36,7 +37,9 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -credentials CREDENTIALS
-                        JSON file containing Discovery service credentials;
+  -json JSON            JSON file containing Discovery service credentials;
                         default: "credentials.json"
+  -collection_id COLLECTION_ID
+                        Discovery collection_id; defaults to an existing
+                        collection, when there is only one.
 ```
