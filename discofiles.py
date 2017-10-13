@@ -70,15 +70,20 @@ class Worker:
                                                 f)
             except:
                 exception = sys.exc_info()[1]
-                exception_code_string = exception.args[0]
-                parsed_string = exception_code_string[-3:]
-                if parsed_string == "429":
-                    self.wait_until = time.perf_counter() + 5
-                    self.queue.put(item)
+                exception_args = exception.args[0]
+                if isinstance(exception_args, str):
+                    parsed_string = exception_args[-3:]
+                    if parsed_string == "429":
+                        self.wait_until = time.perf_counter() + 5
+                        self.queue.put(item)
+                    else:
+                        print("Failing because it is", exception_args)
+                        self.counts[parsed_string] = self.counts.get(
+                            parsed_string, 0) + 1
                 else:
-                    print("Failing because it is", exception_code_string)
-                    self.counts[parsed_string] = self.counts.get(
-                        parsed_string, 0) + 1
+                    print("Failing because it is", exception_args)
+                    self.counts["UNKNOWN"] = self.counts.get("UNKNOWN", 0) + 1
+
             self.queue.task_done()
             item = self.queue.get()
 
