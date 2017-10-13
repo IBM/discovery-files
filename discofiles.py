@@ -47,7 +47,9 @@ class Worker:
         self.environment_id = environment_id
         self.collection_id = collection_id
         self.queue = queue.Queue()
-        for _ in range(16):
+        self.thread_count = 64
+        self.wait_until = 0
+        for _ in range(self.thread_count):
             threading.Thread(target=self.worker, daemon=True).start()
 
     def worker(self):
@@ -56,6 +58,11 @@ class Worker:
         while item:
             if item is None:
                 break
+
+            # Pause this thread when we need to back off pushing
+            wait_for = self.wait_until - time.perf_counter()
+            if wait_for > 0:
+                time.sleep(wait_for)
 
             try:
                 with open(item, "rb") as f:
@@ -67,6 +74,7 @@ class Worker:
                 exception_code_string = exception.args[0]
                 parsed_string = exception_code_string[-3:]
                 if parsed_string == "429":
+                    self.wait_until = time.perf_counter() + 5
                     self.queue.put(item)
                 else:
                     print("Failing because it is", exception_code_string)
@@ -82,10 +90,10 @@ class Worker:
     def finish(self):
         """Block until all tasks are done then return runtime."""
         self.queue.join()
-        for _ in range(16):
+        for _ in range(self.thread_count):
             self.queue.put(None)
         for code, count in self.counts.items():
-            print("We saw", count, "of the error code", code)
+            print("The error code", code, "was returned", count, "time(s).")
 
 
 def writable_environment_id(discovery):
@@ -142,8 +150,8 @@ def main(args):
                     count_ingest += 1
                     work.put_in_queue(this_path)
 
-    print("Ignored this many files", count_ignore,
-          "\nIngesting this many files", count_ingest)
+    print("Ignored", count_ignore, "file(s), because they were found in collection.",
+          "\nIngesting", count_ingest, "file(s).")
 
     work.finish()
 
