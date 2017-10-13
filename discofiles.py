@@ -42,6 +42,7 @@ paths          {}""".format(self.url,
 
 class Worker:
     def __init__(self, discovery, environment_id, collection_id):
+        self.counts = {}
         self.discovery = discovery
         self.environment_id = environment_id
         self.collection_id = collection_id
@@ -51,6 +52,7 @@ class Worker:
 
     def worker(self):
         item = self.queue.get()
+
         while item:
             if item is None:
                 break
@@ -64,13 +66,12 @@ class Worker:
                 exception = sys.exc_info()[1]
                 exception_code_string = exception.args[0]
                 parsed_string = exception_code_string[-3:]
-
                 if parsed_string == "429":
                     self.queue.put(item)
-
                 else:
                     print("Failing because it is", exception_code_string)
-
+                    self.counts[parsed_string] = self.counts.get(
+                        parsed_string, 0) + 1
             self.queue.task_done()
             item = self.queue.get()
 
@@ -83,6 +84,8 @@ class Worker:
         self.queue.join()
         for _ in range(16):
             self.queue.put(None)
+        for code, count in self.counts.items():
+            print("We saw", count, "of the error code", code)
 
 
 def writable_environment_id(discovery):
@@ -120,25 +123,27 @@ def main(args):
             print("Error: no target collection found. Please create a collection.")
         exit(1)
 
-    print(args)
-
-    work = Worker(discovery, args.environment_id, args.collection_id)
+    work = Worker(discovery, args.environment_id,
+                  args.collection_id)
 
     indexed = set_of_indexed_filenames(discovery,
                                        args.environment_id,
                                        args.collection_id)
-    print(len(indexed))
-
+    count_ignore = 0
+    count_ingest = 0
     for path in args.paths:
         for root, dirs, files in os.walk(path):
             for name in files:
 
                 this_path = os.path.join(root, name)
                 if name in indexed:
-                    print("Ignoring this", name, "because it is already there")
+                    count_ignore += 1
                 else:
-                    print("Ingesting", name)
+                    count_ingest += 1
                     work.put_in_queue(this_path)
+
+    print("Ignored this many files", count_ignore,
+          "\nIngesting this many files", count_ingest)
 
     work.finish()
 
