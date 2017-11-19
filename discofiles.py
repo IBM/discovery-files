@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from hashlib import sha1
 import json
 import os
 import queue
@@ -63,11 +64,13 @@ class Worker:
             if wait_for > 0:
                 time.sleep(wait_for)
 
+            this_path, this_sha1 = item
             try:
-                with open(item, "rb") as f:
-                    self.discovery.add_document(self.environment_id,
-                                                self.collection_id,
-                                                f)
+                with open(this_path, "rb") as f:
+                    self.discovery.update_document(self.environment_id,
+                                                   self.collection_id,
+                                                   this_sha1,
+                                                   f)
             except:
                 exception = sys.exc_info()[1]
                 exception_args = exception.args[0]
@@ -77,11 +80,13 @@ class Worker:
                         self.wait_until = time.perf_counter() + 5
                         self.queue.put(item)
                     else:
-                        print("Failing because it is", exception_args)
+                        print("Failing {} due to {}"
+                              .format(this_path, exception_args))
                         self.counts[parsed_string] = self.counts.get(
                             parsed_string, 0) + 1
                 else:
-                    print("Failing because it is", exception_args)
+                    print("Failing {} due to {}"
+                          .format(this_path, exception_args))
                     self.counts["UNKNOWN"] = self.counts.get("UNKNOWN", 0) + 1
 
             self.queue.task_done()
@@ -106,15 +111,27 @@ def writable_environment_id(discovery):
             return environment["environment_id"]
 
 
-def set_of_indexed_filenames(discovery,
-                             environment_id,
-                             collection_id):
-    results = discovery.query(environment_id,
-                              collection_id,
-                              {"count": 10000,
-                               "return": "extracted_metadata.filename"})
-    return {result["extracted_metadata"]["filename"]
-            for result in results["results"]}
+def set_of_existing_sha1s(discovery,
+                          environment_id,
+                          collection_id):
+    set_of_sha1s = set()
+    chuck_size = 10000
+    results = {"matching_results": 0,
+               "results": [{"extracted_metadata": {"sha1": "0"}}]}
+
+    while not results["matching_results"] \
+            or results["matching_results"] > chuck_size:
+        highest_sha1 = results["results"][-1]["extracted_metadata"]["sha1"]
+        results = discovery.query(environment_id,
+                                  collection_id,
+                                  {"count": chuck_size,
+                                   "filter": "extracted_metadata.sha1.raw>" + highest_sha1,
+                                   "return": "extracted_metadata.sha1",
+                                   "sort": "extracted_metadata.sha1.raw"})
+        set_of_sha1s |= {result["extracted_metadata"]["sha1"]
+                         for result in results["results"]}
+
+    return set_of_sha1s
 
 
 def main(args):
@@ -138,9 +155,9 @@ def main(args):
     work = Worker(discovery, args.environment_id,
                   args.collection_id)
 
-    indexed = set_of_indexed_filenames(discovery,
-                                       args.environment_id,
-                                       args.collection_id)
+    indexed = set_of_existing_sha1s(discovery,
+                                    args.environment_id,
+                                    args.collection_id)
     count_ignore = 0
     count_ingest = 0
     for path in args.paths:
@@ -148,11 +165,14 @@ def main(args):
             for name in files:
 
                 this_path = os.path.join(root, name)
-                if name in indexed:
+                with open(this_path, "rb") as this_file:
+                    content = this_file.read()
+                    this_sha1 = sha1(content).hexdigest()
+                if this_sha1 in indexed:
                     count_ignore += 1
                 else:
                     count_ingest += 1
-                    work.put_in_queue(this_path)
+                    work.put_in_queue((this_path, this_sha1))
 
     print("Ignored", count_ignore, "file(s), because they were found in collection.",
           "\nIngesting", count_ingest, "file(s).")
