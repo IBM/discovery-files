@@ -116,11 +116,11 @@ def set_of_existing_sha1s(discovery,
                           collection_id):
     set_of_sha1s = set()
     chuck_size = 10000
-    results = {"matching_results": 0,
+    # Fake result set to get us into the loop below
+    results = {"matching_results": chuck_size + 1,
                "results": [{"extracted_metadata": {"sha1": "0"}}]}
 
-    while not results["matching_results"] \
-            or results["matching_results"] > chuck_size:
+    while results["matching_results"] > chuck_size:
         highest_sha1 = results["results"][-1]["extracted_metadata"]["sha1"]
         results = discovery.query(environment_id,
                                   collection_id,
