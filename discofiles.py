@@ -9,7 +9,7 @@ import sys
 import threading
 import time
 
-
+from pmap import pmap
 from watson_developer_cloud import DiscoveryV1
 
 
@@ -111,27 +111,53 @@ def writable_environment_id(discovery):
             return environment["environment_id"]
 
 
-def set_of_existing_sha1s(discovery,
-                          environment_id,
-                          collection_id):
-    set_of_sha1s = set()
-    chuck_size = 10000
-    # Fake result set to get us into the loop below
-    results = {"matching_results": chuck_size + 1,
-               "results": [{"extracted_metadata": {"sha1": "0"}}]}
+def existing_sha1s(discovery,
+                   environment_id,
+                   collection_id):
+    """
+    Return a list of all of the extracted_metadata.sha1 values found in a
+    Watson Discovery collection.
 
-    while results["matching_results"] > chuck_size:
-        highest_sha1 = results["results"][-1]["extracted_metadata"]["sha1"]
-        results = discovery.query(environment_id,
-                                  collection_id,
-                                  {"count": chuck_size,
-                                   "filter": "extracted_metadata.sha1.raw>" + highest_sha1,
-                                   "return": "extracted_metadata.sha1",
-                                   "sort": "extracted_metadata.sha1.raw"})
-        set_of_sha1s |= {result["extracted_metadata"]["sha1"]
-                         for result in results["results"]}
+    The arguments to this function are:
+    discovery      - an instance of DiscoveryV1
+    environment_id - an environment id found in your Discovery instance
+    collection_id  - a collection id found in the environment above
+    """
+    sha1s = []
+    alphabet = "0123456789abcdef"   # Hexadecimal digits, lowercase
+    chunk_size = 10000
 
-    return set_of_sha1s
+    def maybe_some_sha1s(prefix):
+        """
+        A helper function that does the query and returns either:
+        1) A list of SHA1 values
+        2) The `prefix` that needs to be subdivided into more focused queries
+        """
+        response = discovery.query(environment_id,
+                                   collection_id,
+                                   {"count": chunk_size,
+                                    "filter": "extracted_metadata.sha1::"
+                                              + prefix + "*",
+                                    "return": "extracted_metadata.sha1"})
+        if response["matching_results"] > chunk_size:
+            return prefix
+        else:
+            return [item["extracted_metadata"]["sha1"]
+                    for item in response["results"]]
+
+    prefixes_to_process = [""]
+    while prefixes_to_process:
+        prefix = prefixes_to_process.pop(0)
+        prefixes = [prefix + letter for letter in alphabet]
+        # `pmap` here does the requests to Discovery concurrently to save time.
+        results = pmap(maybe_some_sha1s, prefixes, threads=len(prefixes))
+        for result in results:
+            if isinstance(result, list):
+                sha1s += result
+            else:
+                prefixes_to_process.append(result)
+
+    return sha1s
 
 
 def main(args):
@@ -155,9 +181,10 @@ def main(args):
     work = Worker(discovery, args.environment_id,
                   args.collection_id)
 
-    indexed = set_of_existing_sha1s(discovery,
-                                    args.environment_id,
-                                    args.collection_id)
+    index_list = existing_sha1s(discovery,
+                                args.environment_id,
+                                args.collection_id)
+    indexed = set(index_list)
     count_ignore = 0
     count_ingest = 0
     for path in args.paths:
