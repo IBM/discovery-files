@@ -160,6 +160,18 @@ def existing_sha1s(discovery,
     return sha1s
 
 
+def do_one_file(file_path, work, indexed):
+    with open(file_path, "rb") as this_file:
+        content = this_file.read()
+        this_sha1 = sha1(content).hexdigest()
+
+    if this_sha1 in indexed:
+        return "ignore"
+    else:
+        work.put_in_queue((file_path, this_sha1))
+        return "ingest"
+
+
 def main(args):
     discovery = DiscoveryV1(args.version,
                             url=args.url,
@@ -188,18 +200,20 @@ def main(args):
     count_ignore = 0
     count_ingest = 0
     for path in args.paths:
-        for root, _dirs, files in os.walk(path):
-            for name in files:
-
-                this_path = os.path.join(root, name)
-                with open(this_path, "rb") as this_file:
-                    content = this_file.read()
-                    this_sha1 = sha1(content).hexdigest()
-                if this_sha1 in indexed:
-                    count_ignore += 1
-                else:
-                    count_ingest += 1
-                    work.put_in_queue((this_path, this_sha1))
+        if os.path.isfile(path):
+            if do_one_file(path, work, indexed) == "ingest":
+                count_ingest += 1
+            else:
+                count_ignore += 1
+        else:
+            for root, _dirs, files in os.walk(path):
+                for name in files:
+                    if do_one_file(os.path.join(root, name),
+                                   work,
+                                   indexed) == "ingest":
+                        count_ingest += 1
+                    else:
+                        count_ignore += 1
 
     print("Ignored", count_ignore, "file(s), because they were found in collection.",
           "\nIngesting", count_ingest, "file(s).")
