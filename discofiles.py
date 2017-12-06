@@ -10,7 +10,7 @@ import threading
 import time
 
 from pmap import pmap
-from watson_developer_cloud import DiscoveryV1
+from watson_developer_cloud import DiscoveryV1, WatsonApiException
 
 
 class Args:
@@ -73,20 +73,18 @@ class Worker:
                                                    f)
             except:
                 exception = sys.exc_info()[1]
-                exception_args = exception.args[0]
-                if isinstance(exception_args, str):
-                    parsed_string = exception_args[-3:]
-                    if parsed_string == "429":
+                if isinstance(exception, WatsonApiException):
+                    if exception.code == 429:
                         self.wait_until = time.perf_counter() + 5
                         self.queue.put(item)
                     else:
                         print("Failing {} due to {}"
-                              .format(this_path, exception_args))
-                        self.counts[parsed_string] = self.counts.get(
-                            parsed_string, 0) + 1
+                              .format(this_path, exception))
+                        self.counts[str(exception.code)] = self.counts.get(
+                            str(exception.code), 0) + 1
                 else:
                     print("Failing {} due to {}"
-                          .format(this_path, exception_args))
+                          .format(this_path, exception))
                     self.counts["UNKNOWN"] = self.counts.get("UNKNOWN", 0) + 1
 
             self.queue.task_done()
@@ -106,7 +104,7 @@ class Worker:
 
 
 def writable_environment_id(discovery):
-    for environment in discovery.get_environments()["environments"]:
+    for environment in discovery.list_environments()["environments"]:
         if not environment["read_only"]:
             return environment["environment_id"]
 
@@ -135,10 +133,10 @@ def existing_sha1s(discovery,
         """
         response = discovery.query(environment_id,
                                    collection_id,
-                                   {"count": chunk_size,
-                                    "filter": "extracted_metadata.sha1::"
-                                              + prefix + "*",
-                                    "return": "extracted_metadata.sha1"})
+                                   count=chunk_size,
+                                   filter="extracted_metadata.sha1::"
+                                          + prefix + "*",
+                                   return_fields="extracted_metadata.sha1")
         if response["matching_results"] > chunk_size:
             return prefix
         else:
@@ -190,8 +188,7 @@ def main(args):
             print("Error: no target collection found. Please create a collection.")
         exit(1)
 
-    work = Worker(discovery, args.environment_id,
-                  args.collection_id)
+    work = Worker(discovery, args.environment_id, args.collection_id)
 
     index_list = existing_sha1s(discovery,
                                 args.environment_id,
