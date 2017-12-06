@@ -19,9 +19,10 @@ With [Homebrew](https://brew.sh) on macOS, this will install Python 3.6:
 brew install python3
 ```
 
-One external library is needed: the Watson Developer Cloud SDK for Python.
+Two external libraries are needed: `python-pmap` and
+the Watson Developer Cloud SDK for Python.
 ```
-pip3 install watson-developer-cloud
+pip3 install python-pmap watson-developer-cloud
 ```
 
 ## Command line
