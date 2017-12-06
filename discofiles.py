@@ -3,6 +3,7 @@
 import argparse
 from hashlib import sha1
 import json
+from mimetypes import guess_type
 import os
 import queue
 import sys
@@ -66,11 +67,15 @@ class Worker:
 
             this_path, this_sha1 = item
             try:
+                mime = guess_type(this_path)[0]
+                if not mime:
+                    mime = "application/octet-stream"
                 with open(this_path, "rb") as f:
                     self.discovery.update_document(self.environment_id,
                                                    self.collection_id,
                                                    this_sha1,
-                                                   f)
+                                                   file=f,
+                                                   file_content_type=mime)
             except:
                 exception = sys.exc_info()[1]
                 if isinstance(exception, WatsonApiException):
