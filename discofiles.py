@@ -163,7 +163,7 @@ def existing_sha1s(discovery,
     return sha1s
 
 
-def do_one_file(file_path, work, indexed):
+def do_one_file(file_path, work, indexed, dry_run):
     with open(file_path, "rb") as this_file:
         content = this_file.read()
         this_sha1 = sha1(content).hexdigest()
@@ -171,7 +171,10 @@ def do_one_file(file_path, work, indexed):
     if this_sha1 in indexed:
         return "ignore"
     else:
-        work.put_in_queue((file_path, this_sha1))
+        if dry_run:
+            print("dry run", this_sha1, "path", file_path)
+        else:
+            work.put_in_queue((file_path, this_sha1))
         return "ingest"
 
 
@@ -203,7 +206,7 @@ def main(args):
     count_ingest = 0
     for path in args.paths:
         if os.path.isfile(path):
-            if do_one_file(path, work, indexed) == "ingest":
+            if do_one_file(path, work, indexed, args.dry_run) == "ingest":
                 count_ingest += 1
             else:
                 count_ignore += 1
@@ -212,7 +215,8 @@ def main(args):
                 for name in files:
                     if do_one_file(os.path.join(root, name),
                                    work,
-                                   indexed) == "ingest":
+                                   indexed,
+                                   args.dry_run) == "ingest":
                         count_ingest += 1
                     else:
                         count_ignore += 1
@@ -234,6 +238,9 @@ def parse_command_line():
                         help='JSON file containing Discovery service credentials; default: "credentials.json"')
     parser.add_argument("-collection_id",
                         help="Discovery collection_id; defaults to an existing collection, when there is only one.")
+    parser.add_argument("-dry_run",
+                        action="store_true",
+                        help="Don't ingest anything; just report what would be ingested")
 
     parsed = parser.parse_args()
     with open(parsed.json) as creds_file:
@@ -241,6 +248,7 @@ def parse_command_line():
     args.paths = parsed.path
     if parsed.collection_id:
         args.collection_id = parsed.collection_id
+    args.dry_run = parsed.dry_run
     return args
 
 
