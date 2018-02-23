@@ -10,7 +10,6 @@ import sys
 import threading
 import time
 
-from pmap import pmap
 from watson_developer_cloud import DiscoveryV1, WatsonApiException
 
 
@@ -114,6 +113,38 @@ def writable_environment_id(discovery):
             return environment["environment_id"]
 
 
+def pmap_helper(fn, output_list, input_list, i):
+    output_list[i] = fn(input_list[i])
+
+
+def pmap(fn, input):
+    """
+    Very simple parallel map function that uses threads.
+    Each element in the input list will be processed in its own thread.
+    This means the input list had better not be too large.
+
+    This is only useful for mapping over a function that does I/O,
+    since Python has a Global Interpeter Lock (GIL) that prevents
+    code from running concurrently on multiple CPUs.
+
+    The existing `pmap` libraries I found are process based, which
+    shouldn't be a problem for my use. The trouble is they leak processes
+    (or maybe threads; I don't really know what they do under the covers;
+    I just know they leak and eventually crash.)
+    """
+    input_list = list(input)
+    output_list = [None for _ in range(len(input_list))]
+    threads = [threading.Thread(target=pmap_helper,
+                                args=(fn, output_list, input_list, i),
+                                daemon=True)
+               for i in range(len(input_list))]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    return output_list
+
+
 def existing_sha1s(discovery,
                    environment_id,
                    collection_id):
@@ -153,7 +184,7 @@ def existing_sha1s(discovery,
         prefix = prefixes_to_process.pop(0)
         prefixes = [prefix + letter for letter in alphabet]
         # `pmap` here does the requests to Discovery concurrently to save time.
-        results = pmap(maybe_some_sha1s, prefixes, threads=len(prefixes))
+        results = pmap(maybe_some_sha1s, prefixes)
         for result in results:
             if isinstance(result, list):
                 sha1s += result
