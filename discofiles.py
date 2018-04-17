@@ -195,6 +195,17 @@ def existing_sha1s(discovery,
 
 
 def do_one_file(file_path, work, indexed, dry_run):
+    _, ext = os.path.splitext(file_path)
+    if ext == ".csv":
+        print("CSV files are not yet supported. Ignoring", file_path)
+        return "ignore"
+    elif ext == ".tar":
+        print("Tar files are not yet supported. Ignoring", file_path)
+        return "ignore"
+    elif ext == ".zip":
+        print("Zip files are not yet supported. Ignoring", file_path)
+        return "ignore"
+
     with open(file_path, "rb") as this_file:
         content = this_file.read()
         this_sha1 = sha1(content).hexdigest()
