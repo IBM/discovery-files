@@ -198,26 +198,26 @@ def do_one_file(file_path, work, indexed, dry_run):
     _, ext = os.path.splitext(file_path)
     if ext == ".csv":
         print("CSV files are not yet supported. Ignoring", file_path)
-        return "ignore"
+        return (0, 1)
     elif ext == ".tar":
         print("Tar files are not yet supported. Ignoring", file_path)
-        return "ignore"
+        return (0, 1)
     elif ext == ".zip":
         print("Zip files are not yet supported. Ignoring", file_path)
-        return "ignore"
+        return (0, 1)
 
     with open(file_path, "rb") as this_file:
         content = this_file.read()
         this_sha1 = sha1(content).hexdigest()
 
     if this_sha1 in indexed:
-        return "ignore"
+        return (0, 1)
     else:
         if dry_run:
             print("dry run", this_sha1, "path", file_path)
         else:
             work.put_in_queue((file_path, this_sha1))
-        return "ingest"
+        return (1, 0)
 
 
 def main(args):
@@ -248,20 +248,18 @@ def main(args):
     count_ingest = 0
     for path in args.paths:
         if os.path.isfile(path):
-            if do_one_file(path, work, indexed, args.dry_run) == "ingest":
-                count_ingest += 1
-            else:
-                count_ignore += 1
+            ingested, ignored = do_one_file(path, work, indexed, args.dry_run)
+            count_ingest += ingested
+            count_ignore += ignored
         else:
             for root, _dirs, files in os.walk(path):
                 for name in files:
-                    if do_one_file(os.path.join(root, name),
-                                   work,
-                                   indexed,
-                                   args.dry_run) == "ingest":
-                        count_ingest += 1
-                    else:
-                        count_ignore += 1
+                    ingested, ignored = do_one_file(os.path.join(root, name),
+                                                    work,
+                                                    indexed,
+                                                    args.dry_run)
+                    count_ingest += ingested
+                    count_ignore += ignored
 
     print("Ignored", count_ignore, "file(s), because they were found in collection.",
           "\nIngesting", count_ingest, "file(s).")
