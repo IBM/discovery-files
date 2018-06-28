@@ -21,6 +21,7 @@ class Args:
         self.version = creds.get("version", "2017-09-01")
         self.environment_id = creds.get("environment_id")
         self.collection_id = creds.get("collection_id")
+        self.iam_api_key = creds.get("apikey")
         self.paths = []
 
     def __str__(self):
@@ -224,7 +225,8 @@ def main(args):
     discovery = DiscoveryV1(args.version,
                             url=args.url,
                             username=args.username,
-                            password=args.password)
+                            password=args.password,
+                            iam_api_key=args.iam_api_key)
     args.environment_id = writable_environment_id(discovery)
     collections = discovery.list_collections(
         args.environment_id)["collections"]
