@@ -4,31 +4,26 @@ with automatic error handling and simple retry.
 
 ![Book cover of "The Disco Files"](discofilescover.jpg)
 
-## Team members
-
-- [Becca Makar](https://github.ibm.com/Rebecca-Makar)
-- [Bruce Adams](https://github.ibm.com/ba)
-- [Phil Anderson](https://github.ibm.com/Phil-Anderson)
-
-
 ## Requirements
 
-This tool runs on a recent release of Python 3. We tested on Python 3.6.
-With [Homebrew](https://brew.sh) on macOS, this will install Python 3.6:
-```
+This tool runs on a recent release of Python 3. We tested on Python 3.7.
+With [Homebrew](https://brew.sh) on macOS, this will install Python 3.7:
+
+```bash
 brew install python3
 ```
 
 One external library is needed: the Watson Developer Cloud SDK for Python.
 Note that the WDC SDK changed a lot in November, 2017.
-This code was tested with SDK 1.0.2 and should work with newer releases as well.
-```
+This code was tested with SDK 1.5.0 and should work with newer releases as well.
+
+```bash
 pip3 install --upgrade watson-developer-cloud
 ```
 
 ## Command line
 
-```
+```bash
 ./discofiles.py -h
 usage: discofiles.py [-h] [-json JSON] [-collection_id COLLECTION_ID]
                      path [path ...]
@@ -48,7 +43,8 @@ optional arguments:
 ```
 
 ## Example runs
-```
+
+```bash
 $ time ./discofiles.py ~/irs-pdf-en
 Ignored 0 file(s), because they were found in collection.
 Ingesting 1978 file(s).
