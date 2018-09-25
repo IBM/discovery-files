@@ -109,7 +109,7 @@ class Worker:
 
 
 def writable_environment_id(discovery):
-    for environment in discovery.list_environments()["environments"]:
+    for environment in discovery.list_environments().get_result()["environments"]:
         if not environment["read_only"]:
             return environment["environment_id"]
 
@@ -174,11 +174,12 @@ def existing_sha1s(discovery,
                                    filter="extracted_metadata.sha1::"
                                           + prefix + "*",
                                    return_fields="extracted_metadata.sha1")
-        if response["matching_results"] > chunk_size:
+        result = response.get_result()
+        if result["matching_results"] > chunk_size:
             return prefix
         else:
             return [item["extracted_metadata"]["sha1"]
-                    for item in response["results"]]
+                    for item in result["results"]]
 
     prefixes_to_process = [""]
     while prefixes_to_process:
@@ -226,10 +227,10 @@ def main(args):
                             url=args.url,
                             username=args.username,
                             password=args.password,
-                            iam_api_key=args.iam_api_key)
+                            iam_apikey=args.iam_api_key)
     args.environment_id = writable_environment_id(discovery)
     collections = discovery.list_collections(
-        args.environment_id)["collections"]
+        args.environment_id).get_result()["collections"]
     if len(collections) == 1:
         args.collection_id = collections[0]["collection_id"]
 
