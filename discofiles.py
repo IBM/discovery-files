@@ -10,7 +10,7 @@ import sys
 import threading
 import time
 
-from watson_developer_cloud import DiscoveryV1, WatsonApiException
+from ibm_watson import DiscoveryV1, ApiException
 
 
 class Args:
@@ -22,6 +22,7 @@ class Args:
         self.environment_id = creds.get("environment_id")
         self.collection_id = creds.get("collection_id")
         self.iam_api_key = creds.get("apikey")
+        self.dry_run = False
         self.paths = []
 
     def __str__(self):
@@ -78,7 +79,7 @@ class Worker:
                                                    file_content_type=mime)
             except:
                 exception = sys.exc_info()[1]
-                if isinstance(exception, WatsonApiException):
+                if isinstance(exception, ApiException):
                     if exception.code == 429:
                         self.wait_until = time.perf_counter() + 5
                         self.queue.put(item)
@@ -171,8 +172,7 @@ def existing_sha1s(discovery,
         response = discovery.query(environment_id,
                                    collection_id,
                                    count=chunk_size,
-                                   filter="extracted_metadata.sha1::"
-                                          + prefix + "*",
+                                   filter="extracted_metadata.sha1::" + prefix + "*",
                                    return_fields="extracted_metadata.sha1")
         result = response.get_result()
         if result["matching_results"] > chunk_size:
@@ -278,9 +278,11 @@ def parse_command_line():
                         help="File or directory of files to send to Discovery")
     parser.add_argument("-json",
                         default="credentials.json",
-                        help='JSON file containing Discovery service credentials; default: "credentials.json"')
+                        help='JSON file containing Discovery service credentials;'
+                             ' default: "credentials.json"')
     parser.add_argument("-collection_id",
-                        help="Discovery collection_id; defaults to an existing collection, when there is only one.")
+                        help="Discovery collection_id;"
+                             " defaults to an existing collection, when there is only one.")
     parser.add_argument("-dry_run",
                         action="store_true",
                         help="Don't ingest anything; just report what would be ingested")

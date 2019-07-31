@@ -14,12 +14,10 @@ brew install python3
 ```
 
 One external library is needed: the Watson Developer Cloud SDK for Python.
-Note that the WDC SDK changed a lot in November, 2017 (going from 0.x to 1.x)
-and had some breaking changes in September 2018 (going from 1.x to 2.x).
-This code was tested with SDK 2.1.0 and should work with newer releases as well.
+This code was tested with SDK 3.2.0 and should work with newer releases as well.
 
 ```bash
-pip3 install --upgrade watson-developer-cloud
+pip3 install --upgrade ibm-watson
 ```
 
 ## Command line
