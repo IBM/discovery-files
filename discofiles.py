@@ -33,13 +33,15 @@ password       {}
 version        {}
 environment_id {}
 collection_id  {}
-paths          {}""".format(self.url,
-                            self.username,
-                            self.password,
-                            self.version,
-                            self.environment_id,
-                            self.collection_id,
-                            self.paths)
+paths          {}""".format(
+            self.url,
+            self.username,
+            self.password,
+            self.version,
+            self.environment_id,
+            self.collection_id,
+            self.paths,
+        )
 
 
 class Worker:
@@ -72,11 +74,13 @@ class Worker:
                 if not mime:
                     mime = "application/octet-stream"
                 with open(this_path, "rb") as f:
-                    self.discovery.update_document(self.environment_id,
-                                                   self.collection_id,
-                                                   this_sha1,
-                                                   file=f,
-                                                   file_content_type=mime)
+                    self.discovery.update_document(
+                        self.environment_id,
+                        self.collection_id,
+                        this_sha1,
+                        file=f,
+                        file_content_type=mime,
+                    )
             except:
                 exception = sys.exc_info()[1]
                 if isinstance(exception, ApiException):
@@ -84,13 +88,12 @@ class Worker:
                         self.wait_until = time.perf_counter() + 5
                         self.queue.put(item)
                     else:
-                        print("Failing {} due to {}"
-                              .format(this_path, exception))
-                        self.counts[str(exception.code)] = self.counts.get(
-                            str(exception.code), 0) + 1
+                        print("Failing {} due to {}".format(this_path, exception))
+                        self.counts[str(exception.code)] = (
+                            self.counts.get(str(exception.code), 0) + 1
+                        )
                 else:
-                    print("Failing {} due to {}"
-                          .format(this_path, exception))
+                    print("Failing {} due to {}".format(this_path, exception))
                     self.counts["UNKNOWN"] = self.counts.get("UNKNOWN", 0) + 1
 
             self.queue.task_done()
@@ -136,10 +139,12 @@ def pmap(fn, input):
     """
     input_list = list(input)
     output_list = [None for _ in range(len(input_list))]
-    threads = [threading.Thread(target=pmap_helper,
-                                args=(fn, output_list, input_list, i),
-                                daemon=True)
-               for i in range(len(input_list))]
+    threads = [
+        threading.Thread(
+            target=pmap_helper, args=(fn, output_list, input_list, i), daemon=True
+        )
+        for i in range(len(input_list))
+    ]
     for t in threads:
         t.start()
     for t in threads:
@@ -147,9 +152,7 @@ def pmap(fn, input):
     return output_list
 
 
-def existing_sha1s(discovery,
-                   environment_id,
-                   collection_id):
+def existing_sha1s(discovery, environment_id, collection_id):
     """
     Return a list of all of the extracted_metadata.sha1 values found in a
     Watson Discovery collection.
@@ -160,7 +163,7 @@ def existing_sha1s(discovery,
     collection_id  - a collection id found in the environment above
     """
     sha1s = []
-    alphabet = "0123456789abcdef"   # Hexadecimal digits, lowercase
+    alphabet = "0123456789abcdef"  # Hexadecimal digits, lowercase
     chunk_size = 10000
 
     def maybe_some_sha1s(prefix):
@@ -169,17 +172,18 @@ def existing_sha1s(discovery,
         1) A list of SHA1 values
         2) The `prefix` that needs to be subdivided into more focused queries
         """
-        response = discovery.query(environment_id,
-                                   collection_id,
-                                   count=chunk_size,
-                                   filter="extracted_metadata.sha1::" + prefix + "*",
-                                   return_fields="extracted_metadata.sha1")
+        response = discovery.query(
+            environment_id,
+            collection_id,
+            count=chunk_size,
+            filter="extracted_metadata.sha1::" + prefix + "*",
+            return_fields="extracted_metadata.sha1",
+        )
         result = response.get_result()
         if result["matching_results"] > chunk_size:
             return prefix
         else:
-            return [item["extracted_metadata"]["sha1"]
-                    for item in result["results"]]
+            return [item["extracted_metadata"]["sha1"] for item in result["results"]]
 
     prefixes_to_process = [""]
     while prefixes_to_process:
@@ -223,14 +227,17 @@ def do_one_file(file_path, work, indexed, dry_run):
 
 
 def main(args):
-    discovery = DiscoveryV1(args.version,
-                            url=args.url,
-                            username=args.username,
-                            password=args.password,
-                            iam_apikey=args.iam_api_key)
+    discovery = DiscoveryV1(
+        args.version,
+        url=args.url,
+        username=args.username,
+        password=args.password,
+        iam_apikey=args.iam_api_key,
+    )
     args.environment_id = writable_environment_id(discovery)
-    collections = discovery.list_collections(
-        args.environment_id).get_result()["collections"]
+    collections = discovery.list_collections(args.environment_id).get_result()[
+        "collections"
+    ]
     if len(collections) == 1:
         args.collection_id = collections[0]["collection_id"]
 
@@ -243,9 +250,7 @@ def main(args):
 
     work = Worker(discovery, args.environment_id, args.collection_id)
 
-    index_list = existing_sha1s(discovery,
-                                args.environment_id,
-                                args.collection_id)
+    index_list = existing_sha1s(discovery, args.environment_id, args.collection_id)
     indexed = set(index_list)
     count_ignore = 0
     count_ingest = 0
@@ -257,35 +262,45 @@ def main(args):
         else:
             for root, _dirs, files in os.walk(path):
                 for name in files:
-                    ingested, ignored = do_one_file(os.path.join(root, name),
-                                                    work,
-                                                    indexed,
-                                                    args.dry_run)
+                    ingested, ignored = do_one_file(
+                        os.path.join(root, name), work, indexed, args.dry_run
+                    )
                     count_ingest += ingested
                     count_ignore += ignored
 
-    print("Ignored", count_ignore, "file(s), because they were found in collection.",
-          "\nIngesting", count_ingest, "file(s).")
+    print(
+        "Ignored",
+        count_ignore,
+        "file(s), because they were found in collection.",
+        "\nIngesting",
+        count_ingest,
+        "file(s).",
+    )
 
     work.finish()
 
 
 def parse_command_line():
-    parser = argparse.ArgumentParser(
-        description="Send files into Watson Discovery")
-    parser.add_argument("path",
-                        nargs="+",
-                        help="File or directory of files to send to Discovery")
-    parser.add_argument("-json",
-                        default="credentials.json",
-                        help='JSON file containing Discovery service credentials;'
-                             ' default: "credentials.json"')
-    parser.add_argument("-collection_id",
-                        help="Discovery collection_id;"
-                             " defaults to an existing collection, when there is only one.")
-    parser.add_argument("-dry_run",
-                        action="store_true",
-                        help="Don't ingest anything; just report what would be ingested")
+    parser = argparse.ArgumentParser(description="Send files into Watson Discovery")
+    parser.add_argument(
+        "path", nargs="+", help="File or directory of files to send to Discovery"
+    )
+    parser.add_argument(
+        "-json",
+        default="credentials.json",
+        help="JSON file containing Discovery service credentials;"
+        ' default: "credentials.json"',
+    )
+    parser.add_argument(
+        "-collection_id",
+        help="Discovery collection_id;"
+        " defaults to an existing collection, when there is only one.",
+    )
+    parser.add_argument(
+        "-dry_run",
+        action="store_true",
+        help="Don't ingest anything; just report what would be ingested",
+    )
 
     parsed = parser.parse_args()
     with open(parsed.json) as creds_file:
