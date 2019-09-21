@@ -5,11 +5,12 @@ verify_ssl = true
 
 [dev-packages]
 black = "*"
+mypy = "*"
 pylint = "*"
 pytest = "*"
 
 [packages]
-ibm-watson = "*"
+ibm-watson = ">=3.2,<4"
 
 [requires]
 python_version = "3.7"
