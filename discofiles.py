@@ -26,12 +26,12 @@ class Args:
     Class for holding command line arguments.
     """
 
+    paths: List[str]
     collection_id: Optional[str] = None
     dry_run: bool = False
     environment_id: Optional[str] = None
     iam_api_key: Optional[str] = None
     password: Optional[str] = None
-    paths: List[str] = []
     url: Optional[str] = None
     username: Optional[str] = None
     version: str = "2019-09-23"
