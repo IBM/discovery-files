@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-An extremely simple tool to send files into Watson Discovery,
-with automatic error handling and simple retry.
+A simple tool to send files into Watson Discovery, with simple retry.
 """
 
 import argparse

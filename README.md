@@ -1,6 +1,5 @@
 # discovery-files
-An extremely simple tool to send files into Watson Discovery,
-with automatic error handling and simple retry.
+A simple tool to send files into Watson Discovery, with simple retry.
 
 ![Book cover of "The Disco Files"](discofilescover.jpg)
 
@@ -14,10 +13,10 @@ brew install python3
 ```
 
 One external library is needed: the Watson Developer Cloud SDK for Python.
-This code was tested with SDK 3.2.0 and should work with newer releases as well.
+This code was tested with SDK 3.2.0 and should work any 3.x release.
 
 ```bash
-pip3 install --upgrade ibm-watson
+pip3 install ibm-watson
 ```
 
 ## Command line
@@ -51,8 +50,6 @@ Failing because it is HTTPSConnectionPool(host='gateway.watsonplatform.net', por
 Failing because it is HTTPSConnectionPool(host='gateway.watsonplatform.net', port=443): Max retries exceeded with url: /discovery/api/v1/environments/9ba5af06-4d03-4b0d-836a-cbe4b0a6f48e/collections/975b556e-f02f-4fb1-85b6-52a3bf88045a/documents?version=2017-09-01 (Caused by NewConnectionError('<urllib3.connection.VerifiedHTTPSConnection object at 0x114724550>: Failed to establish a new connection: [Errno 8] nodename nor servname provided, or not known',))
 Failing because it is Error: Request must specify either a "metadata" or "file" part, Code: 400
 Failing because it is HTTPSConnectionPool(host='gateway.watsonplatform.net', port=443): Max retries exceeded with url: /discovery/api/v1/environments/9ba5af06-4d03-4b0d-836a-cbe4b0a6f48e/collections/975b556e-f02f-4fb1-85b6-52a3bf88045a/documents?version=2017-09-01 (Caused by NewConnectionError('<urllib3.connection.VerifiedHTTPSConnection object at 0x115caa128>: Failed to establish a new connection: [Errno 8] nodename nor servname provided, or not known',))
-The error code UNKNOWN was returned 3 time(s).
-The error code 400 was returned 1 time(s).
 
 real	10m21.783s
 user	3m19.183s
