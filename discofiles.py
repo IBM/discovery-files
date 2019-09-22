@@ -210,6 +210,8 @@ def walk_paths(
                     count_ingest += ingested
                     count_ignore += ignored
 
+    work_q.put(None)
+
     print(
         "Ignored",
         count_ignore,
