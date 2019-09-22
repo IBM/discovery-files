@@ -107,7 +107,7 @@ def pmap(action, input_iterable) -> list:
     """
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONCURRENCY) as executor:
         futures = [executor.submit(action, item) for item in input_iterable]
-        return [future.result() for future in concurrent.futures.as_completed(futures)]
+        return [future.result() for future in futures]
 
 
 def existing_sha1s(target: Target) -> List[str]:
