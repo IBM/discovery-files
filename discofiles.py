@@ -261,7 +261,6 @@ def main(args: Args) -> None:
                     futures, return_when=concurrent.futures.FIRST_COMPLETED
                 )
             item = work_q.get()
-        concurrent.futures.wait(futures)
 
 
 def parse_command_line() -> Args:
