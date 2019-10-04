@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "cff99e6e6c721015c8611ffc4dd29320299efc6558aefaf411c0f04238f0d896"
+            "sha256": "ec068c60e62c20c863848d7cc4d9161b6cd9b7844db54593a9c8116856eb52d8"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -32,16 +32,16 @@
         },
         "ibm-cloud-sdk-core": {
             "hashes": [
-                "sha256:45d10bd24fe3229e88f716dc946e9d90582840f7ffbbb17bea70135ad2c27044"
+                "sha256:4bd62cfbec3b875e8f7b462e2b14c4977a0db43139be6e5da2c63553b045c804"
             ],
-            "version": "==0.5.2"
+            "version": "==1.0.0"
         },
         "ibm-watson": {
             "hashes": [
-                "sha256:ccb7e55aecd9320e6d3838d89fee86dbbbb73f37ce002b3912d4983ddb436c08"
+                "sha256:25c2cd0b70def16f42c9b920460bd336af50c0db0e41eb20c2462b040f571c16"
             ],
             "index": "pypi",
-            "version": "==3.4.2"
+            "version": "==4.0.0"
         },
         "idna": {
             "hashes": [
@@ -208,10 +208,9 @@
         },
         "mypy-extensions": {
             "hashes": [
-                "sha256:37e0e956f41369209a3d5f34580150bcacfabaa57b33a15c0b25f4b5725e0812",
-                "sha256:b16cabe759f55e3409a7d231ebd2841378fb0c27a5d1994719e340e4f429ac3e"
+                "sha256:a161e3b917053de87dbe469987e173e49fb454eca10ef28b48b384538cc11458"
             ],
-            "version": "==0.4.1"
+            "version": "==0.4.2"
         },
         "packaging": {
             "hashes": [

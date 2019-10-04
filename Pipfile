@@ -10,7 +10,7 @@ pytest = "*"
 black = "==19.3b0"
 
 [packages]
-ibm-watson = ">=3.2,<4"
+ibm-watson = ">=3.2,<5"
 
 [requires]
 python_version = "3.7"
